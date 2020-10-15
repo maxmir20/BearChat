@@ -1,0 +1,79 @@
+#signup
+curl --request POST \
+  --url 'http://localhost:80/api/auth/signup?userID=123hnbu1234889' \
+  --header 'content-type: application/json' \
+  --data '{
+	"username" : "<username>",
+	"email" : "<email>",
+	"password" : "<password>"
+}'
+
+#signin
+curl --request POST \
+  --url 'http://localhost:80/api/auth/signin?userID=123hnbu1234889' \
+  --header 'content-type: application/json' \
+  --data '{
+	"username" : "<username>",
+	"email" : "<email>",
+	"password" : "<password>"
+}'
+
+
+#send reset token to email
+curl --request POST \
+  --url http://localhost:80/api/auth/sendreset \
+  --header 'content-type: application/json' \
+  --data '{
+	"email" : "<email>",
+	"password" : "<password>"
+}'
+
+
+#reset password
+curl --request POST \
+  --url 'http://localhost:80/api/auth/resetpw?token=oFNhk6' \
+  --header 'content-type: application/json' \
+  --data '{
+	"username" : "<username>",
+	"email" : "<email>",
+	"password" : "<password>"
+}'
+
+#create a  post [PUT YOUR OWN COOKIE]
+curl --request POST \
+  --url http://localhost:81/api/posts/create \
+  --header 'content-type: application/json' \
+  --cookie 'access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOiJmMDkwZWM1My03MDVmLTQwNTYtYTdiYi0wOWNkNjliNTcxMzIiLCJleHAiOjE2MDE0MTc2MzYsImlhdCI6MTYwMTMzMTIzNiwiaXNzIjoiQ2FsQ2hhdCIsInN1YiI6ImFjY2VzcyJ9.6Bg2gzhG-TzWJvG_Gt0-9cpnuHZ1D_Vq41ncOwzTptE; refresh_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOiJmMDkwZWM1My03MDVmLTQwNTYtYTdiYi0wOWNkNjliNTcxMzIiLCJleHAiOjE2MDE0MTc2MzYsImlhdCI6MTYwMTMzMTIzNiwiaXNzIjoiQ2FsQ2hhdCIsInN1YiI6InJlZnJlc2gifQ.jNI3HZqwiv0WhHlHC6ohfkq8aqx32ieA1rtzVjyIcpo' \
+  --data '{
+	"content" : "this is a test post 2 from gmail"
+}'
+
+#delete a  post [PUT YOUR OWN COOKIE and POSTID]
+curl --request DELETE \
+  --url http://localhost:80/api/posts/delete/cfcf5599-c4ef-4e26-a1d9-25cdbdd1c0a0 \
+  --cookie 'access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOiJmMDkwZWM1My03MDVmLTQwNTYtYTdiYi0wOWNkNjliNTcxMzIiLCJleHAiOjE2MDE0MTc2MzYsImlhdCI6MTYwMTMzMTIzNiwiaXNzIjoiQ2FsQ2hhdCIsInN1YiI6ImFjY2VzcyJ9.6Bg2gzhG-TzWJvG_Gt0-9cpnuHZ1D_Vq41ncOwzTptE; refresh_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOiJmMDkwZWM1My03MDVmLTQwNTYtYTdiYi0wOWNkNjliNTcxMzIiLCJleHAiOjE2MDE0MTc2MzYsImlhdCI6MTYwMTMzMTIzNiwiaXNzIjoiQ2FsQ2hhdCIsInN1YiI6InJlZnJlc2gifQ.jNI3HZqwiv0WhHlHC6ohfkq8aqx32ieA1rtzVjyIcpo'
+
+#get a user's feed [PUT YOUR OWN COOKIE AND USERID]
+curl --request GET \
+  --url http://localhost:81/api/posts/0 \
+  --cookie 'access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOiJmMDkwZWM1My03MDVmLTQwNTYtYTdiYi0wOWNkNjliNTcxMzIiLCJleHAiOjE2MDE0MTc2MzYsImlhdCI6MTYwMTMzMTIzNiwiaXNzIjoiQ2FsQ2hhdCIsInN1YiI6ImFjY2VzcyJ9.6Bg2gzhG-TzWJvG_Gt0-9cpnuHZ1D_Vq41ncOwzTptE; refresh_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOiJmMDkwZWM1My03MDVmLTQwNTYtYTdiYi0wOWNkNjliNTcxMzIiLCJleHAiOjE2MDE0MTc2MzYsImlhdCI6MTYwMTMzMTIzNiwiaXNzIjoiQ2FsQ2hhdCIsInN1YiI6InJlZnJlc2gifQ.jNI3HZqwiv0WhHlHC6ohfkq8aqx32ieA1rtzVjyIcpo'.
+
+#get a user's posts [PUT YOUR OWN COOKIE AND USERID]
+curl --request GET \
+  --url http://localhost:81/api/posts/b4c96ac0-f74b-4ff4-9a05-68589262bf1b/0 \
+  --cookie 'access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOiJmMDkwZWM1My03MDVmLTQwNTYtYTdiYi0wOWNkNjliNTcxMzIiLCJleHAiOjE2MDE0MTc2MzYsImlhdCI6MTYwMTMzMTIzNiwiaXNzIjoiQ2FsQ2hhdCIsInN1YiI6ImFjY2VzcyJ9.6Bg2gzhG-TzWJvG_Gt0-9cpnuHZ1D_Vq41ncOwzTptE; refresh_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOiJmMDkwZWM1My03MDVmLTQwNTYtYTdiYi0wOWNkNjliNTcxMzIiLCJleHAiOjE2MDE0MTc2MzYsImlhdCI6MTYwMTMzMTIzNiwiaXNzIjoiQ2FsQ2hhdCIsInN1YiI6InJlZnJlc2gifQ.jNI3HZqwiv0WhHlHC6ohfkq8aqx32ieA1rtzVjyIcpo'
+
+#set a user profile [PUT YOUR OWN COOKIE AND USERID]
+curl --request PUT \
+  --url http://localhost:82/api/profile/[USERID] \
+  --header 'content-type: application/json' \
+  --cookie 'access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOiJlNjkyNmJiYi0yZWM2LTQxYWUtYmIxYi02ZWYyNDlmZGRiNTciLCJleHAiOjE2MDE0MjA3NjEsImlhdCI6MTYwMTMzNDM2MSwiaXNzIjoiQ2FsQ2hhdCIsInN1YiI6ImFjY2VzcyJ9.vGt4JiU7qNgKxYFyssR0rvkgfWoTT1mRRW387wSQWIw; refresh_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOiJlNjkyNmJiYi0yZWM2LTQxYWUtYmIxYi02ZWYyNDlmZGRiNTciLCJleHAiOjE2MDE0MjA3NjEsImlhdCI6MTYwMTMzNDM2MSwiaXNzIjoiQ2FsQ2hhdCIsInN1YiI6InJlZnJlc2gifQ.wDOOzz9NmRkcVqFw09K9x4PqPKDfI_RzamFa7NXdoKY' \
+  --data '{
+	"firstName" : "<firstName>", "lastName":"<lastName>", "email":"<email>", "uuid":"<uuid>"
+}'
+
+#get a user profile [PUT YOUR OWN COOKIE AND USERID]
+curl --request GET \
+  --url http://localhost:82/api/profile/[USERID] \
+  --header 'content-type: application/json' \
+  --cookie 'access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOiJlNjkyNmJiYi0yZWM2LTQxYWUtYmIxYi02ZWYyNDlmZGRiNTciLCJleHAiOjE2MDE0MjA3NjEsImlhdCI6MTYwMTMzNDM2MSwiaXNzIjoiQ2FsQ2hhdCIsInN1YiI6ImFjY2VzcyJ9.vGt4JiU7qNgKxYFyssR0rvkgfWoTT1mRRW387wSQWIw; refresh_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOiJlNjkyNmJiYi0yZWM2LTQxYWUtYmIxYi02ZWYyNDlmZGRiNTciLCJleHAiOjE2MDE0MjA3NjEsImlhdCI6MTYwMTMzNDM2MSwiaXNzIjoiQ2FsQ2hhdCIsInN1YiI6InJlZnJlc2gifQ.wDOOzz9NmRkcVqFw09K9x4PqPKDfI_RzamFa7NXdoKY'
