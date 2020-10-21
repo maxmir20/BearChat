@@ -25,12 +25,12 @@ const (
 
 // RegisterRoutes initializes the api endpoints and maps the requests to specific functions
 func RegisterRoutes(router *mux.Router) error {
-	router.HandleFunc("/api/auth/signup", signup).Methods("YOUR CODE HERE", http.MethodOptions)
-	router.HandleFunc("/api/auth/signin", signin).Methods("YOUR CODE HERE", http.MethodOptions)
-	router.HandleFunc("/api/auth/logout", logout).Methods("YOUR CODE HERE", http.MethodOptions)
-	router.HandleFunc("/api/auth/verify", verify).Methods("YOUR CODE HERE", http.MethodOptions)
-	router.HandleFunc("/api/auth/sendreset", sendReset).Methods("YOUR CODE HERE", http.MethodOptions)
-	router.HandleFunc("/api/auth/resetpw", resetPassword).Methods("YOUR CODE HERE", http.MethodOptions)
+	router.HandleFunc("/api/auth/signup", signup).Methods(/*YOUR CODE HERE*/, http.MethodOptions)
+	router.HandleFunc("/api/auth/signin", signin).Methods(/*YOUR CODE HERE*/, http.MethodOptions)
+	router.HandleFunc("/api/auth/logout", logout).Methods(/*YOUR CODE HERE*/, http.MethodOptions)
+	router.HandleFunc("/api/auth/verify", verify).Methods(/*YOUR CODE HERE*/, http.MethodOptions)
+	router.HandleFunc("/api/auth/sendreset", sendReset).Methods(/*YOUR CODE HERE*/, http.MethodOptions)
+	router.HandleFunc("/api/auth/resetpw", resetPassword).Methods(/*YOUR CODE HERE*/, http.MethodOptions)
 
 	// Load sendgrid credentials
 	err := godotenv.Load()
@@ -59,7 +59,7 @@ func signup(w http.ResponseWriter, r *http.Request) {
 
 	//Check if the username already exists
 	var exists bool
-	err = DB.QueryRow("YOUR CODE HERE", "YOUR CODE HERE").Scan("YOUR CODE HERE")
+	err = DB.QueryRow("YOUR CODE HERE", /*YOUR CODE HERE*/).Scan(/*YOUR CODE HERE*/)
 	
 	//Check for error
 	if err != nil {
@@ -76,7 +76,7 @@ func signup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//Check if the email already exists
-	err = DB.QueryRow("YOUR CODE HERE", "YOUR CODE HERE").Scan(&exists)
+	err = DB.QueryRow("YOUR CODE HERE", /*YOUR CODE HERE*/).Scan(&exists)
 	
 	//Check for error
 	// YOUR CODE HERE
@@ -100,22 +100,22 @@ func signup(w http.ResponseWriter, r *http.Request) {
 	// YOUR CODE HERE
 
 	//Store credentials in database
-	_, err = DB.Query("YOUR CODE HERE", "YOUR CODE HERE", "YOUR CODE HERE", "YOUR CODE HERE", "YOUR CODE HERE", "YOUR CODE HERE")
+	_, err = DB.Query("YOUR CODE HERE", /*YOUR CODE HERE*/, /*YOUR CODE HERE*/, /*YOUR CODE HERE*/, /*YOUR CODE HERE*/, /*YOUR CODE HERE*/)
 	
 	//Check for errors in storing the credentials
 	// YOUR CODE HERE
 
 
 	//Generate an access token, expiry dates are in Unix time
-	accessExpiresAt := "YOUR CODE HERE"
+	accessExpiresAt := /*YOUR CODE HERE*/
 	var accessToken string
 	accessToken, err = setClaims(AuthClaims{
 		UserID: "YOUR CODE HERE",
 		StandardClaims: jwt.StandardClaims{
 			Subject:   "access",
-			ExpiresAt: "YOUR CODE HERE",
+			ExpiresAt: /*YOUR CODE HERE*/,
 			Issuer:    defaultJWTIssuer,
-			IssuedAt:  "YOUR CODE HERE",
+			IssuedAt:  /*YOUR CODE HERE*/,
 		},
 	})
 	
@@ -126,8 +126,9 @@ func signup(w http.ResponseWriter, r *http.Request) {
 	//Set the cookie, name it "access_token"
 	http.SetCookie(w, &http.Cookie{
 		Name:    "YOUR CODE HERE",
-		Value:   "YOUR CODE HERE",
-		Expires: "YOUR CODE HERE",
+		Value:   /*YOUR CODE HERE*/,
+		Expires: /*YOUR CODE HERE*/,
+		// Leave these next three values commented for now
 		// Secure: true,
 		// HttpOnly: true,
 		// SameSite: http.SameSiteNoneMode,
@@ -135,15 +136,15 @@ func signup(w http.ResponseWriter, r *http.Request) {
 	})
 
 	//Generate refresh token
-	var refreshExpiresAt = time.Now().Add(DefaultAccessJWTExpiry)
+	var refreshExpiresAt = time.Now().Add(DefaultRefreshJWTExpiry)
 	var refreshToken string
 	refreshToken, err = setClaims(AuthClaims{
 		UserID: userID,
 		StandardClaims: jwt.StandardClaims{
 			Subject:   "refresh",
-			ExpiresAt: "YOUR CODE HERE",
+			ExpiresAt: /*YOUR CODE HERE*/,
 			Issuer:    defaultJWTIssuer,
-			IssuedAt:  "YOUR CODE HERE",
+			IssuedAt:  /*YOUR CODE HERE*/,
 		},
 	})
 
@@ -156,8 +157,8 @@ func signup(w http.ResponseWriter, r *http.Request) {
 	//set the refresh token ("refresh_token") as a cookie
 	http.SetCookie(w, &http.Cookie{
 		Name:    "YOUR CODE HERE",
-		Value:   "YOUR CODE HERE",
-		Expires: "YOUR CODE HERE",
+		Value:   /*YOUR CODE HERE*/,
+		Expires: /*YOUR CODE HERE*/,
 		Path: "/",
 	})
 
@@ -192,7 +193,7 @@ func signin(w http.ResponseWriter, r *http.Request) {
 
 	//Get the hashedPassword and userId of the user
 	var hashedPassword, userID string
-	err = DB.QueryRow("YOUR CODE HERE", "YOUR CODE HERE").Scan("YOUR CODE HERE", "YOUR CODE HERE")
+	err = DB.QueryRow("YOUR CODE HERE", /*YOUR CODE HERE*/).Scan(/*YOUR CODE HERE*/, /*YOUR CODE HERE*/)
 	// process errors associated with emails
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -230,9 +231,9 @@ func logout(w http.ResponseWriter, r *http.Request) {
 	// logging out causes expiration time of cookie to be set to now
 
 	//Set the access_token and refresh_token to have an empty value and set their expiration date to anytime in the past
-	var expiresAt = "YOUR CODE HERE"
-	http.SetCookie(w, &http.Cookie{Name: "access_token", Value: "YOUR CODE HERE", Expires: "YOUR CODE HERE"})
-	http.SetCookie(w, &http.Cookie{Name: "refresh_token", Value: "YOUR CODE HERE", Expires: "YOUR CODE HERE"})
+	var expiresAt = /*YOUR CODE HERE*/
+	http.SetCookie(w, &http.Cookie{Name: "access_token", Value: /*YOUR CODE HERE*/, Expires: /*YOUR CODE HERE*/})
+	http.SetCookie(w, &http.Cookie{Name: "refresh_token", Value: /*YOUR CODE HERE*/, Expires: /*YOUR CODE HERE*/})
 	return
 }
 
@@ -255,7 +256,7 @@ func verify(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//Obtain the user with the verifiedToken from the query parameter and set their verification status to the integer "1"
-	_, err := DB.Exec("YOUR CODE HERE", "YOUR CODE HERE")
+	_, err := DB.Exec("YOUR CODE HERE", /*YOUR CODE HERE*/)
 
 	//Check for errors in executing the previous query
 	// "YOUR CODE HERE"
@@ -289,7 +290,7 @@ func sendReset(w http.ResponseWriter, r *http.Request) {
 	token := GetRandomBase62(resetTokenSize)
 
 	//Obtain the user with the specified email and set their resetToken to the token we generated
-	_, err = DB.Query("YOUR CODE HERE", "YOUR CODE HERE", "YOUR CODE HERE")
+	_, err = DB.Query("YOUR CODE HERE", /*YOUR CODE HERE*/, /*YOUR CODE HERE*/)
 	
 	//Check for errors executing the queries
 	// "YOUR CODE HERE"
@@ -332,7 +333,7 @@ func resetPassword(w http.ResponseWriter, r *http.Request) {
 	password := credentials.Password
 	var exists bool
 	//check if the username and token pair exist
-	err = DB.QueryRow("YOUR CODE HERE", "YOUR CODE HERE", "YOUR CODE HERE").Scan("YOUR CODE HERE")
+	err = DB.QueryRow("YOUR CODE HERE", /*YOUR CODE HERE*/, /*YOUR CODE HERE*/).Scan(/*YOUR CODE HERE*/)
 
 	//Check for errors executing the query
 	// "YOUR CODE HERE"
@@ -350,14 +351,13 @@ func resetPassword(w http.ResponseWriter, r *http.Request) {
 
 
 	//input new password and clear the reset token (set the token equal to empty string)
-	_, err = DB.Exec("YOUR CODE HERE", "YOUR CODE HERE", "YOUR CODE HERE", "YOUR CODE HERE")
+	_, err = DB.Exec("YOUR CODE HERE", /*YOUR CODE HERE*/, /*YOUR CODE HERE*/, /*YOUR CODE HERE*/)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		log.Print(err.Error())
 	}
 
-	//put the user in the redis cache to invalidate all current sessions (NOT IN SCOPE FOR PROJECT)
-
+	//put the user in the redis cache to invalidate all current sessions (NOT IN SCOPE FOR PROJECT), leave this comment for future reference
 
 	return
 }

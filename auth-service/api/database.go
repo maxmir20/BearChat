@@ -23,6 +23,11 @@ func InitDB() *sql.DB {
 	// Open a SQL connection to the docker container hosting the database server
 	// Assign the connection to the "DB" variable
 	// Look at how it's done in the other microservices!
+	dbType := "mysql"
+	username := "root"
+	password := "root"
+	ipAddress := "tcp(172.28.1.2:3306)"
+	dbName := "/auth"
 	// "YOUR CODE HERE"
 	
 	if err != nil {
