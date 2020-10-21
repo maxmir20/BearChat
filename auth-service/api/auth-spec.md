@@ -1,5 +1,7 @@
 This file contains information concerning the implementation of `api.go`. In `api.go` you are asked to fill out skeleton code for the functions `signup`, `signin`, `logout`, `verify`, `sendReset`, and `resetPassword`. Note that although the only file you are changing is `api.go` you should still look at other files as some functions or features may be partially implemented for you.
 
+You will also need to fix `database.go`.
+
 The table schema for this project is created as follows:
 
 ```
@@ -46,6 +48,16 @@ Delete the user's access token cookie. This cannot be done directly; clearing co
 ### `resetPassword`
 
 Resetting the password is similar to `verify` except instead of checking for a matching verification token, you must check for a matching password reset token. When the matching password token is found, the old password should be overwritten with the new password.
+
+### `database.go`
+
+The only change you need to do is to allow this microservice to communicate with the database. In order to do that, you need to open the database.
+
+The information you need is included as a comment in `database.go`. We recommend looking at other the microservices' implementations to see how they communicate with the database. For further resources, these links may be helpful: 
+
+ - https://tutorialedge.net/golang/golang-mysql-tutorial/
+
+ - https://golang.org/pkg/database/sql/
 
 ### Hashing Passwords
 
