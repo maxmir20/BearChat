@@ -16,20 +16,20 @@ services:
         expose:
             - '80'
 
-        db-server:
-            build: ./db-server
-            container_name: db-server
-            restart:  on-failure
-            ports:
-                - "3306:3306"
-            env_file:
-                - ./db-server/database.env
-            networks:
-                bearchat:
-                    ipv4_address:
-                        172.28.1.2
-            expose:
-                - '3306'
+    db-server:
+        build: ./db-server
+        container_name: db-server
+        restart:  on-failure
+        ports:
+            - "3306:3306"
+        env_file:
+            - ./db-server/database.env
+        networks:
+            bearchat:
+                ipv4_address:
+                    172.28.1.2
+        expose:
+            - '3306'
 
 networks:
     bearchat:
