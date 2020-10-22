@@ -54,13 +54,13 @@ func signup(w http.ResponseWriter, r *http.Request) {
 
 	//Obtain the credentials from the request body
 	credential := Credentials{}
-	err := json.NewDecoder(request.Body).Decode(&credential)
+	err := json.NewDecoder(r.Body).Decode(&credential)
 	if err != nil {
-		http.Error(response, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 
 	if credential.Username == "" || credential.Password == "" || credential.Email == "" {
-		response.WriteHeader(400)
+		w.WriteHeader(400)
 		return
 	}
 
@@ -93,12 +93,14 @@ func signup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//Check boolean returned from query
+	//max notes: should be != ?
 	if exists == true {
 		http.Error(w, errors.New("this email is taken").Error(), http.StatusConflict)
 		return
 	}
 
 	//Hash the password using bcrypt and store the hashed password in a variable
+	//max notes: do I need my compared hash to have the same cost?
 	hashed_password, err := bcrypt.GenerateFromPassword([]byte(credential.Password), 14)
 
 	//Check for errors during hashing process
@@ -115,8 +117,7 @@ func signup(w http.ResponseWriter, r *http.Request) {
 	verify_token := GetRandomBase62(verifyTokenSize)
 
 	//Store credentials in database
-	_, err = DB.Query("INSERT INTO users (username, email, hashedPassword, verfied, resetToken, verifiedToken, userID) 
-					   VALUES (?,?,?, True, NULL, ?, ?)", 
+	_, err = DB.Query("INSERT INTO users (username, email, hashedPassword, verified, resetToken, verifiedToken, userID) VALUES (?,?,?, True, NULL, ?, ?)", 
 					   credential.Username, credential.Email, hashed_password, verify_token, new_uuid)
 	
 	//Check for errors in storing the credentials
@@ -187,7 +188,7 @@ func signup(w http.ResponseWriter, r *http.Request) {
 	})
 
 	// Send verification email
-	err = SendEmail(credentials.Email, "Email Verification", "user-signup.html", map[string]interface{}{"Token": verificationToken})
+	err = SendEmail(credential.Email, "Email Verification", "user-signup.html", map[string]interface{}{"Token": verificationToken})
 	if err != nil {
 		http.Error(w, errors.New("error sending verification email").Error(), http.StatusInternalServerError)
 		log.Print(err.Error())
@@ -208,15 +209,23 @@ func signin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//Store the credentials in a instance of Credentials
-	// "YOUR CODE HERE"
+	//Store the credentials in a instance of Credentials + //Check for errors in storing credntials
+	credential := Credentials{}
+	err := json.NewDecoder(request.Body).Decode(&credential)
+	if err != nil {
+		http.Error(response, err.Error(), http.StatusBadRequest)
+	}
 
-	//Check for errors in storing credntials
-	// "YOUR CODE HERE"
+	if credential.Username == "" || credential.Password == "" || credential.Email == ""{
+		response.WriteHeader(400)
+		return
+	}
+
+
 
 	//Get the hashedPassword and userId of the user
 	var hashedPassword, userID string
-	err = DB.QueryRow("YOUR CODE HERE", /*YOUR CODE HERE*/).Scan(/*YOUR CODE HERE*/, /*YOUR CODE HERE*/)
+	err = DB.QueryRow("SELECT hashedPassword, userId FROM users WHERE username = ?, email = ?", credential.username, credential.email).Scan(&hashedPassword, &userID)
 	// process errors associated with emails
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -228,18 +237,77 @@ func signin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if hashed password matches the one corresponding to the email
-	// "YOUR CODE HERE"
+	// Check if hashed password matches the one corresponding to the email + Check error in comparing hashed passwords
 
-	//Check error in comparing hashed passwords
-	// "YOUR CODE HERE"
+	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(credential.Password))
+	if err != nil {
+		http.Error(w, errors.New("incorrect password").Error(), http.StatusUnauthorized)
+		log.Print(err.Error())
+	}
 
 	//Generate an access token  and set it as a cookie (Look at signup and feel free to copy paste!)
-	// "YOUR CODE HERE"
+	//Generate an access token, expiry dates are in Unix time
+	accessExpiresAt := time.Now().Add(time.Minute * 15).Unix() //set for 15 minutes
+	var accessToken string
+	accessToken, err = setClaims(AuthClaims{
+		UserID: credential.Username,
+		StandardClaims: jwt.StandardClaims{
+			Subject:   "access",
+			ExpiresAt: accessExpiresAt,
+			Issuer:    defaultJWTIssuer,
+			IssuedAt:  time.Now().Unix(),
+		},
+	})
+	
+	//Check for error in generating an access token
+	if err != nil {
+		http.Error(w, errors.New("error in generating an access token").Error(), http.StatusInternalServerError)
+		log.Print(err.Error())
+		return
+	}
 
+	//Set the cookie, name it "access_token"
+	http.SetCookie(w, &http.Cookie{
+		Name:    "access_token",
+		Value:   accessToken,
+		Expires: accessExpiresAt,
+		// Leave these next three values commented for now
+		// Secure: true,
+		// HttpOnly: true,
+		// SameSite: http.SameSiteNoneMode,
+		Path: "/",
+	})
 
 	//Generate a refresh token and set it as a cookie (Look at signup and feel free to copy paste!)
-	// "YOUR CODE HERE"
+	//Generate refresh token
+	var refreshExpiresAt = time.Now().Add(DefaultRefreshJWTExpiry)
+	var refreshToken string 
+	refreshToken, err = setClaims(AuthClaims{
+		UserID: userID,
+		StandardClaims: jwt.StandardClaims{
+			Subject:   "refresh",
+			ExpiresAt: refreshExpiresAt,
+			Issuer:    defaultJWTIssuer,
+			IssuedAt: time.Now().Unix(),
+		},
+	})
+
+	if err != nil {
+		http.Error(w, errors.New("error creating refreshToken").Error(), http.StatusInternalServerError)
+		log.Print(err.Error())
+		return
+	}
+
+	//set the refresh token ("refresh_token") as a cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:    "refresh_token",
+		Value:   refreshToken,
+		Expires: refreshExpiresAt,
+		Path: "/",
+	})
+	//max notes: add header?
+	w.WriteHeader(200)
+	return
 }
 
 func logout(w http.ResponseWriter, r *http.Request) {
@@ -254,9 +322,11 @@ func logout(w http.ResponseWriter, r *http.Request) {
 	// logging out causes expiration time of cookie to be set to now
 
 	//Set the access_token and refresh_token to have an empty value and set their expiration date to anytime in the past
-	var expiresAt = /*YOUR CODE HERE*/
-	http.SetCookie(w, &http.Cookie{Name: "access_token", Value: /*YOUR CODE HERE*/, Expires: /*YOUR CODE HERE*/})
-	http.SetCookie(w, &http.Cookie{Name: "refresh_token", Value: /*YOUR CODE HERE*/, Expires: /*YOUR CODE HERE*/})
+
+	//max notes: debating whether I should set the value at nil or 0 (refer to verify function for comparison)
+	var expiresAt = time.Now() - 1
+	http.SetCookie(w, &http.Cookie{Name: "access_token", Value: nil, Expires: expiresAt})
+	http.SetCookie(w, &http.Cookie{Name: "refresh_token", Value: nil , Expires: expiresAt})
 	return
 }
 
@@ -270,6 +340,7 @@ func verify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//max notes: will this return the verified token? it's Token in the verification email and token here
 	token, ok := r.URL.Query()["token"]
 	// check that valid token exists
 	if !ok || len(token[0]) < 1 {
@@ -279,10 +350,15 @@ func verify(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//Obtain the user with the verifiedToken from the query parameter and set their verification status to the integer "1"
-	_, err := DB.Exec("YOUR CODE HERE", /*YOUR CODE HERE*/)
+	_, err := DB.Exec("UPDATE users SET verified = 1 WHERE verifiedToken = ?", token)
 
 	//Check for errors in executing the previous query
-	// "YOUR CODE HERE"
+	//max notes: probably haven't covered all use cases yet
+	if err != nil {
+		http.Error(w, errors.New("Cannot find that verification token").Error(), StatusNotFound)
+		log.Print(err.Error())
+		return
+	}
 
 	return
 }
@@ -299,27 +375,39 @@ func sendReset(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//Get the email from the body (decode into an instance of Credentials)
-	// "YOUR CODE HERE"
-
+	credential := Credentials{}
+	err := json.NewDecoder(request.Body).Decode(&credential)
+	
 	//check for errors decoding the object
-	// "YOUR CODE HERE"
+	if err != nil {
+		http.Error(response, err.Error(), http.StatusBadRequest)
+	}
 
 	//check for other miscallenous errors that may occur
 	//what is considered an invalid input for an email?
-	// "YOUR CODE HERE"
-
+	//max notes: are there other invalid inputs?
+	if credential.Email == ""{
+		response.WriteHeader(400)
+		return
+	}
 
 	//generate reset token
 	token := GetRandomBase62(resetTokenSize)
 
 	//Obtain the user with the specified email and set their resetToken to the token we generated
-	_, err = DB.Query("YOUR CODE HERE", /*YOUR CODE HERE*/, /*YOUR CODE HERE*/)
+	_, err = DB.Exec("UPDATE users SET resetToken = ? WHERE email = ?", token, credential.Email)
+	// _, err = DB.Query("YOUR CODE HERE", /*YOUR CODE HERE*/, /*YOUR CODE HERE*/)
 	
 	//Check for errors executing the queries
-	// "YOUR CODE HERE"
+	//max notes: right error?
+	if err != nil {
+		http.Error(w, errors.New("error finding user").Error(), http.StatusInternalServerError)
+		log.Print(err.Error())
+		return
+	}
 
 	// Send verification email
-	err = SendEmail(credentials.Email, "BearChat Password Reset", "password-reset.html", map[string]interface{}{"Token": token})
+	err = SendEmail(credential.Email, "BearChat Password Reset", "password-reset.html", map[string]interface{}{"Token": token})
 	if err != nil {
 		http.Error(w, errors.New("error sending verification email").Error(), http.StatusInternalServerError)
 		log.Print(err.Error())
@@ -342,39 +430,57 @@ func resetPassword(w http.ResponseWriter, r *http.Request) {
 	token := r.URL.Query().Get("token")
 
 	//get the username, email, and password from the body
-	// "YOUR CODE HERE"
+	credential = Credentials{}
+	err := json.NewDecoder(request.Body).Decode(&credential)
+
 
 	//Check for errors decoding the body
-	// "YOUR CODE HERE"
+	if err != nil {
+		http.Error(response, err.Error(), http.StatusBadRequest)
+	}
 
 	//Check for invalid inputs, return an error if input is invalid
-	// "YOUR CODE HERE"
+	if credential.Username == "" || credential.Password == "" || credential.Email == "" {
+		response.WriteHeader(400)
+		return
+	}
 
 
-	email := credentials.Email;
-	username := credentials.Username;
-	password := credentials.Password
+	email := credential.Email;
+	username := credential.Username;
+	password := credential.Password
 	var exists bool
 	//check if the username and token pair exist
-	err = DB.QueryRow("YOUR CODE HERE", /*YOUR CODE HERE*/, /*YOUR CODE HERE*/).Scan(/*YOUR CODE HERE*/)
+	err = DB.QueryRow("SELECT EXISTS (SELECT username, resetToken FROM users WHERE username = ?, resetToken = ?", username, token).Scan(&exists)
 
-	//Check for errors executing the query
-	// "YOUR CODE HERE"
+	//Check for errors executing the query	
+	if err != nil {
+		http.Error(w, errors.New("error checking if username exists").Error(), http.StatusInternalServerError)
+		log.Print(err.Error())
+		return
+	}
 
 	//Check exists boolean. Call an error if the username-token pair doesn't exist
-	// "YOUR CODE HERE"
+	if exists != true {
+		http.Error(w, errors.New("this username is taken").Error(), http.StatusConflict)
+		return
+	}
 
 
 
 	//Hash the new password
-	// "YOUR CODE HERE"
+	hashed_password, err := bcrypt.GenerateFromPassword([]byte(credential.Password), 14)
 
 	//Check for errors in hashing the new password
-	// "YOUR CODE HERE"
+	if err != nil {
+		http.Error(w, errors.New("error during hashing process").Error(), http.StatusInternalServerError)
+		log.Print(err.Error())
+		return
+	}
 
 
 	//input new password and clear the reset token (set the token equal to empty string)
-	_, err = DB.Exec("YOUR CODE HERE", /*YOUR CODE HERE*/, /*YOUR CODE HERE*/, /*YOUR CODE HERE*/)
+	_, err = DB.Exec("UPDATE users SET hashedPassword = ?, resetToken = '' WHERE username = ?, email = ?", hashed_password, username, email)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		log.Print(err.Error())
