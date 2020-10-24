@@ -3,8 +3,9 @@ package api
 import "time"
 
 type Post struct {
-	Content  string    `json:"content"`
+	PostBody  string    `json:"postBody"`
 	PostID   string    `json:"postID"`
-	AuthorID string    `json:"authorID"`
+	AuthorID string    `json:"AuthorID"`
 	PostTime time.Time `json:"postTime"`
+	PostAuthor string `json:"postAuthor"`
 }
