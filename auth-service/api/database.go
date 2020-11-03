@@ -40,11 +40,7 @@ func InitDB() *sql.DB {
 	for err != nil {
 		log.Println("couldnt connect, waiting 20 seconds before retrying")
 		time.Sleep(20*time.Second)
-		// Connect again, use the same connection function as you did above ^
-<<<<<<< HEAD
-=======
-		// YOUR CODE HERE
->>>>>>> 66d7de007ed1d2b4d6a67dae4c62cdbac3f8b56b
+		// Connect again, use the same connection function as you did above
 		DB, err = sql.Open(dbType, fmt.Sprintf("%s:%s@%s%s", username, password, ipAddress, dbName))
 	}
 
