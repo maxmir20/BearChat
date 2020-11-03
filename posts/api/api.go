@@ -53,6 +53,7 @@ func getPosts(w http.ResponseWriter, r *http.Request) {
 	// First get the uuid from the access_token (see getUUID())
 	// Compare that to the uuid we got from the url parameters, if they're not the same, return an error http.StatusUnauthorized
 	// YOUR CODE HERE
+
 	
 	var posts *sql.Rows
 	var err error
@@ -115,13 +116,18 @@ func getPosts(w http.ResponseWriter, r *http.Request) {
 func createPost(w http.ResponseWriter, r *http.Request) {
 	// Obtain the userID from the JSON Web Token
 	// See getUUID(...)
-	// YOUR CODE HERE
+	userID := getUUID(w, r)
 
 	// Create a Post object and then Decode the JSON Body (which has the structure of a Post) into that object
-	// YOUR CODE HERE
+	post := Post{}
+	err := json.NewDecoder(r.Body).Decode(&post)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
 
 	// Use the uuid library to generate a post ID
 	// Hint: https://godoc.org/github.com/google/uuid#New
+	postID := uuid.New()
 
 	//Load our location in PST
 	pst, err := time.LoadLocation("America/Los_Angeles")
@@ -132,18 +138,27 @@ func createPost(w http.ResponseWriter, r *http.Request) {
 
 	// Insert the post into the database
 	// Look at /db-server/initdb.sql for a better understanding of what you need to insert
-	result , err = DB.Exec("YOUR CODE HERE", /* YOUR CODE HERE */, /* YOUR CODE HERE */, /* YOUR CODE HERE */, /* YOUR CODE HERE */)
+	result , err = DB.Exec("INSERT INTO posts (content, postID, authorID, postTime) VALUES (?,?,?,?)", post.PostBody, postID, userID, currPST)
 	
 	// Check errors with executing the query
-	// YOUR CODE HERE
+	if err != nil {
+		http.Error(w, errors.New("error inserting the post into the database").Error(), http.StatusInternalServerError)
+		log.Print(err.Error())
+		return
+	}
 
 	// Make sure at least one row was affected, otherwise return an InternalServerError
 	// You did something very similar in Checkpoint 2
-	// YOUR CODE HERE
+	r, err := result.RowsAffected()
+	if r == 0 {
+		http.Error(w, errors.New("Cannot find the post in the database").Error(), http.InternalServerError)
+		log.Print(err.Error())
+		return
+	} 
 
 	// What kind of HTTP header should we return since we created something?
 	// Check your signup from Checkpoint 2!
-	// YOUR CODE HERE
+	w.WriteHeader(201)
 
 	return
 }
@@ -152,39 +167,55 @@ func deletePost(w http.ResponseWriter, r *http.Request) {
 
 	// Get the postID to delete
 	// Look at mux.Vars() ... -> https://godoc.org/github.com/gorilla/mux#Vars
-	// YOUR CODE HERE
-
+	postID := mux.Vars(r)["postID"]
 
 	// Get the uuid from the access token, see getUUID(...)
-	// YOUR CODE HERE
+	uuid := getUUID(w, r)
 
 	var exists bool
 	//check if post exists
-	err := DB.QueryRow("YOUR CODE HERE", /* YOUR CODE HERE */).Scan(/* YOUR CODE HERE */)
+	err := DB.QueryRow("SELECT EXISTS (SELECT postID FROM posts WHERE postID = ?)", postID).Scan(&exists)
 
 	// Check for errors in executing the query
-	// YOUR CODE HERE
+	if err != nil {
+		http.Error(w, errors.New("error checking if post/postID exists").Error(), http.StatusInternalServerError)
+		log.Print(err.Error())
+		return
+	}
 
 	// Check if the post actually exists, otherwise return an http.StatusNotFound
-	// YOUR CODE HERE
+	if exists != true {
+		http.Error(w, errors.New("the post cannot be found/doesn't exists").Error(), http.StatusNotFound)
+		return
+	}
 
 	// Get the authorID of the post with the specified postID
 	var authorID string
-	err = DB.QueryRow("YOUR CODE HERE", /* YOUR CODE HERE */).Scan(/* YOUR CODE HERE */)
+	err = DB.QueryRow("SELECT authorID FROM posts WHERE postID = ?", postID).Scan(authorID)
 	
 	// Check for errors in executing the query
-	// YOUR CODE HERE
+	if err != nil {
+		http.Error(w, errors.New("error getting the authorID of the post with the specified postID").Error(), http.StatusInternalServerError)
+		log.Print(err.Error())
+		return
+	}
 
 	// Check if the uuid from the access token is the same as the authorID from the query
 	// If not, return http.StatusUnauthorized
-	// YOUR CODE HERE
+	if uuid != authorID {
+		http.Error(w, errors.New("requested source doesn't match uuid in database").Error(), http.StatusUnauthorized)
+		return
+	}
 
 	// Delete the post since by now we're authorized to do so
-	_, err = DB.Exec("YOUR CODE HERE", /* YOUR CODE HERE */)
+	_, err = DB.Exec("DELETE FROM posts WHERE postID = ?", postID)
 	
 	// Check for errors in executing the query
-	// YOUR CODE HERE
-
+	if err != nil {
+		http.Error(w, errors.New("error getting the authorID of the post with the specified postID").Error(), http.StatusInternalServerError)
+		log.Print(err.Error())
+		return
+	}
 	return
 }
 
