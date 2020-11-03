@@ -193,7 +193,7 @@ func signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	return
 }
 
@@ -342,7 +342,7 @@ func verify(w http.ResponseWriter, r *http.Request) {
 	token, ok := r.URL.Query()["token"]
 	// check that valid token exists
 	if !ok || len(token[0]) < 1 {
-		http.Error(w, errors.New("Url Param 'token' is missing").Error(), http.StatusInternalServerError)
+		http.Error(w, errors.New("Url Param 'token' is missing").Error(), http.StatusBadRequest)
 		log.Print(errors.New("Url Param 'token' is missing").Error())
 		return
 	}
@@ -354,7 +354,7 @@ func verify(w http.ResponseWriter, r *http.Request) {
 	//Check for errors in executing the previous query
 	//max notes: probably haven't covered all use cases yet
 	if err != nil {
-		http.Error(w, errors.New("Something went wrong").Error(), http.StatusInternalServerError)
+		http.Error(w, errors.New("Something went wrong").Error(),http.StatusBadRequest)
 		log.Print(err.Error())
 		return
 	}

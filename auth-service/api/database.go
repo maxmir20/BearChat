@@ -42,6 +42,7 @@ func InitDB() *sql.DB {
 		time.Sleep(20*time.Second)
 		// Connect again, use the same connection function as you did above ^
 		// YOUR CODE HERE
+		DB, err = sql.Open(dbType, fmt.Sprintf("%s:%s@%s%s", username, password, ipAddress, dbName))
 	}
 
 	return DB
