@@ -10,6 +10,7 @@ import (
 	"github.com/gorilla/mux"
 	"database/sql"
 	"strconv"
+	"fmt"
 )
 
 
@@ -18,8 +19,8 @@ func RegisterRoutes(router *mux.Router) error {
 
 	router.HandleFunc("/api/posts/{startIndex}", getFeed).Methods(http.MethodGet) 
 	router.HandleFunc("/api/posts/{uuid}/{startIndex}", getPosts).Methods(http.MethodGet)
-	router.HandleFunc("/api/posts/create", createPost).Methods(/* YOUR CODE HERE */)
-	router.HandleFunc("/api/posts/delete/{postID}", deletePost).Methods(/* YOUR CODE HERE */)
+	router.HandleFunc("/api/posts/create", createPost).Methods(http.MethodPost, http.MethodOptions)
+	router.HandleFunc("/api/posts/delete/{postID}", deletePost).Methods(http.MethodDelete, http.MethodOptions)
 
 	return nil
 }
@@ -72,7 +73,9 @@ func getPosts(w http.ResponseWriter, r *http.Request) {
 		-Make sure to always get up to 25, and start with an offset of {startIndex} (look at the previous SQL homework for hints)\
 		-As indicated by the "posts" variable, this query returns multiple rows
 	*/
-	posts, err = DB.Query("SELECT * FROM posts WHERE AuthorID = ? ORDER BY PostTime LIMIT 25 OFFSET ?", uuid , start)
+	//posts, err = DB.Query("SELECT * FROM posts WHERE AuthorID = ?, PostID >= ? ORDER BY PostTime LIMIT 25", uuid , start)
+	posts, err = DB.Query("SELECT * FROM posts WHERE authorID = ? ORDER BY postTime LIMIT 25 OFFSET ?", &uuid, &start)
+
 
 	// Check for errors from the query
 	if err != nil {
@@ -88,7 +91,6 @@ func getPosts(w http.ResponseWriter, r *http.Request) {
 		postID string
 		userid string
 		postTime time.Time
-		postAuthor string
 	)
 	numPosts := 0
 	// Create "postsArray", which is a slice (array) of Posts. Make sure it has size 25
@@ -99,7 +101,7 @@ func getPosts(w http.ResponseWriter, r *http.Request) {
 		// Every time we call posts.Next() we get access to the next row returned from our query
 		// Question: How many columns did we return
 		// Reminder: Scan() scans the rows in order of their columns. See the variables defined up above for your convenience
-		err = posts.Scan(&content, &postID, &userid, &postTime, &postAuthor /* missing 5th column, decide about later*/)
+		err = posts.Scan(&content, &postID, &userid, &postTime) //&postAuthor /* missing 5th column, decide about later*/)
 		
 		// Check for errors in scanning
 		if err != nil {
@@ -112,7 +114,7 @@ func getPosts(w http.ResponseWriter, r *http.Request) {
 		// Hint: https://gobyexample.com/structs 
 		
 		//YOUR CODE HERE
-		postsArray[i] = Post{content, postID, userid, postTime, postAuthor /* add final column?*/}
+		postsArray[i] = Post{content, postID, userid, postTime, ""}//postAuthor /* add final column?*/}
 		numPosts++
 	}
 
@@ -183,19 +185,23 @@ func createPost(w http.ResponseWriter, r *http.Request) {
 }
 
 func deletePost(w http.ResponseWriter, r *http.Request) {
-
 	// Get the postID to delete
 	// Look at mux.Vars() ... -> https://godoc.org/github.com/gorilla/mux#Vars
 	postID := mux.Vars(r)["postID"]
 
+	fmt.Sprintf("postID: %s", postID)
+
 	// Get the uuid from the access token, see getUUID(...)
 	uuid := getUUID(w, r)
+
+	fmt.Sprintf("UUID: %s", uuid)
 
 	var exists bool
 	//check if post exists
 	err := DB.QueryRow("SELECT EXISTS (SELECT postID FROM posts WHERE postID = ?)", postID).Scan(&exists)
 
-	// Check for errors in executing the query
+	// Check for errors in executing the query 
+
 	if err != nil {
 		http.Error(w, errors.New("error checking if post/postID exists").Error(), http.StatusInternalServerError)
 		log.Print(err.Error())
@@ -211,6 +217,8 @@ func deletePost(w http.ResponseWriter, r *http.Request) {
 	// Get the authorID of the post with the specified postID
 	var authorID string
 	err = DB.QueryRow("SELECT authorID FROM posts WHERE postID = ?", postID).Scan(&authorID)
+
+	fmt.Sprintf("authorID: %s", authorID)
 	
 	// Check for errors in executing the query
 	if err != nil {
@@ -262,12 +270,15 @@ func getFeed(w http.ResponseWriter, r *http.Request) {
 		log.Print(err.Error())
 		return
 	}
+
+	var posts *sql.Rows
 	  
 	// Obtain all of the posts where the authorID is *NOT* the current authorID
 	// Sort chronologically
 	// Always limit to 25 queries
 	// Always start at an offset of startIndex
-	posts, err := DB.Query("SELECT * FROM posts WHERE AuthorID != ? ORDER BY postTime LIMIT 25 OFFSET ?", &userID, &start)
+	//posts, err := DB.Query("SELECT * FROM posts WHERE AuthorID != ?, PostID >= ? ORDER BY postTime LIMIT 25", &userID, &start)
+	posts, err = DB.Query("SELECT * FROM posts WHERE authorID != ? ORDER BY postTime LIMIT 25 OFFSET ?", &userID, &start)
 	
 	// Check for errors in executing the query
 	if err != nil {
@@ -281,7 +292,6 @@ func getFeed(w http.ResponseWriter, r *http.Request) {
 		postID string
 		userid string
 		postTime time.Time
-		postAuthor string
 	)
 
 	numPosts := 0
@@ -289,13 +299,13 @@ func getFeed(w http.ResponseWriter, r *http.Request) {
 	// Almost exaclty like getPosts()
 	postsArray := make([]Post, 25)
 	for i :=0; i< len(postsArray) && posts.Next(); i++ {
-		err = posts.Scan(&content, &postID, &userID, &postTime, &postAuthor)
+		err = posts.Scan(&content, &postID, &userID, &postTime)
 		if err != nil {
 			http.Error(w, errors.New("error scanning columns: " + err.Error()).Error(), http.StatusUnauthorized)
 			log.Print(err.Error())
 		}
 
-		postsArray[i] = Post{content, postID, userid, postTime, postAuthor}
+		postsArray[i] = Post{content, postID, userid, postTime, ""}
 		numPosts++
 
 	}
@@ -311,9 +321,17 @@ func getFeed(w http.ResponseWriter, r *http.Request) {
   // We will always have *up to* 25 posts, but we can have less
   // However, we already allocated 25 spots in oru postsArray
   // Return the subarray that contains all of our values (which may be a subsection of our array or the entire array)
-  json.NewEncoder(w).Encode(postsArray[:numPosts])
-  return;
+  //json.NewEncoder(w).Encode(postsArray[:numPosts])
 
+	// postJson, err := json.Marshal(postsArray[:numPosts])
+ //    if err != nil {
+ //        log.Fatal("Cannot encode to JSON ", err)
+ //    }
 
-  return
+	//json.NewEncoder(w).Encode(postJson)
+	json.NewEncoder(w).Encode(postsArray[:numPosts])
+
+	//return postsArray[:numPosts]
+
+	return
 }
