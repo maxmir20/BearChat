@@ -74,7 +74,7 @@ func getPosts(w http.ResponseWriter, r *http.Request) {
 		-As indicated by the "posts" variable, this query returns multiple rows
 	*/
 	//posts, err = DB.Query("SELECT * FROM posts WHERE AuthorID = ?, PostID >= ? ORDER BY PostTime LIMIT 25", uuid , start)
-	posts, err = DB.Query("SELECT * FROM posts WHERE authorID = ? ORDER BY postTime LIMIT 25 OFFSET ?", &uuid, &start)
+	posts, err = DB.Query("SELECT * FROM posts WHERE authorID = ? ORDER BY postTime LIMIT 25 OFFSET ?", uuid, start)
 
 
 	// Check for errors from the query
@@ -277,7 +277,7 @@ func getFeed(w http.ResponseWriter, r *http.Request) {
 	// Always limit to 25 queries
 	// Always start at an offset of startIndex
 	//posts, err := DB.Query("SELECT * FROM posts WHERE AuthorID != ?, PostID >= ? ORDER BY postTime LIMIT 25", &userID, &start)
-	posts, err = DB.Query("SELECT * FROM posts WHERE authorID != ? ORDER BY postTime LIMIT 25 OFFSET ?", &userID, &start)
+	posts, err = DB.Query("SELECT * FROM posts WHERE authorID != ? ORDER BY postTime LIMIT 25 OFFSET ?", userID, start)
 	
 	// Check for errors in executing the query
 	if err != nil {
@@ -298,7 +298,7 @@ func getFeed(w http.ResponseWriter, r *http.Request) {
 	// Almost exaclty like getPosts()
 	postsArray := make([]Post, 25)
 	for i :=0; i< len(postsArray) && posts.Next(); i++ {
-		err = posts.Scan(&content, &postID, &userID, &postTime)
+		err = posts.Scan(&content, &postID, &userid, &postTime)
 		if err != nil {
 			http.Error(w, errors.New("error scanning columns: " + err.Error()).Error(), http.StatusUnauthorized)
 			log.Print(err.Error())
