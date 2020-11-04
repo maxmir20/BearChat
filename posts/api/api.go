@@ -72,7 +72,7 @@ func getPosts(w http.ResponseWriter, r *http.Request) {
 		-Make sure to always get up to 25, and start with an offset of {startIndex} (look at the previous SQL homework for hints)\
 		-As indicated by the "posts" variable, this query returns multiple rows
 	*/
-	posts, err = DB.Query("SELECT * FROM posts WHERE AuthorID = ?, PostID >= ? ORDER BY PostTime LIMIT 25", uuid , start)
+	posts, err = DB.Query("SELECT * FROM posts WHERE AuthorID = ? ORDER BY PostTime LIMIT 25 OFFSET ?", uuid , start)
 
 	// Check for errors from the query
 	if err != nil {
@@ -127,7 +127,8 @@ func getPosts(w http.ResponseWriter, r *http.Request) {
   // We will always have *up to* 25 posts, but we can have less
   // However, we already allocated 25 spots in oru postsArray
   // Return the subarray that contains all of our values (which may be a subsection of our array or the entire array)
-  json.NewEncoder(w).Encode(postsArray[:numPosts])
+  subarray := postsArray[:numPosts]
+  json.NewEncoder(w).Encode(subarray)
   return;
 }
 
@@ -209,7 +210,7 @@ func deletePost(w http.ResponseWriter, r *http.Request) {
 
 	// Get the authorID of the post with the specified postID
 	var authorID string
-	err = DB.QueryRow("SELECT authorID FROM posts WHERE postID = ?", postID).Scan(authorID)
+	err = DB.QueryRow("SELECT authorID FROM posts WHERE postID = ?", postID).Scan(&authorID)
 	
 	// Check for errors in executing the query
 	if err != nil {
@@ -266,7 +267,7 @@ func getFeed(w http.ResponseWriter, r *http.Request) {
 	// Sort chronologically
 	// Always limit to 25 queries
 	// Always start at an offset of startIndex
-	posts, err := DB.Query("SELECT * FROM posts WHERE AuthorID != ?, PostID >= ORDER BY postTime LIMIT 25", &userID, &start)
+	posts, err := DB.Query("SELECT * FROM posts WHERE AuthorID != ? ORDER BY postTime LIMIT 25 OFFSET ?", &userID, &start)
 	
 	// Check for errors in executing the query
 	if err != nil {
