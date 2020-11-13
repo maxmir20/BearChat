@@ -55,27 +55,10 @@ def test_feed():
     if response.status_code != 200:
         fail('expected status code 200 but was {}'.format(response.status_code))
     feed = response.json()
+    
     # print("*2*the feed is: ")
     # print(feed) 
-    if len(feed) != 1:
-        fail('expected feed length 1 but was {}'.format(len(feed)))
-    post = feed[0]
-    if 'postID' not in post:
-        fail('postID missing from post on feed')
-    if 'AuthorID' not in post:
-        fail('AuthorID missing from post on feed')
-    global postID
-    postID = post['postID']
-    global userID
-    userID = post['AuthorID']
 
-    url = "http://localhost:81/api/posts/0"
-    response = requests.get(url, cookies=user2_cookies)
-    if response.status_code != 200:
-        fail('expected status code 200 but was {}'.format(response.status_code))
-    feed = response.json()
-    # print("*1*the feed is: ")
-    # print(feed) 
     if len(feed) != 1:
         fail('expected feed length 1 but was {}'.format(len(feed)))
     post = feed[0]
@@ -87,6 +70,27 @@ def test_feed():
     postID2 = post['postID']
     global userID2
     userID2 = post['AuthorID']
+
+    url = "http://localhost:81/api/posts/0"
+    response = requests.get(url, cookies=user2_cookies)
+    if response.status_code != 200:
+        fail('expected status code 200 but was {}'.format(response.status_code))
+    feed = response.json()
+
+    # print("*1*the feed is: ")
+    # print(feed) 
+    
+    if len(feed) != 1:
+        fail('expected feed length 1 but was {}'.format(len(feed)))
+    post = feed[0]
+    if 'postID' not in post:
+        fail('postID missing from post on feed')
+    if 'AuthorID' not in post:
+        fail('AuthorID missing from post on feed')
+    global postID
+    postID = post['postID']
+    global userID
+    userID = post['AuthorID']
 
 def test_get():
     url = "http://localhost:81/api/posts/{}/0".format(userID)

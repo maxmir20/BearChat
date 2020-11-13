@@ -129,7 +129,7 @@ func signup(w http.ResponseWriter, r *http.Request) {
 	accessExpiresAt := time.Now().Add(time.Minute * 15) //set for 15 minutes
 	var accessToken string
 	accessToken, err = setClaims(AuthClaims{
-		UserID: credential.Username,
+		UserID: userID,
 		StandardClaims: jwt.StandardClaims{
 			Subject:   "access",
 			ExpiresAt: accessExpiresAt.Unix(),
