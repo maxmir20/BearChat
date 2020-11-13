@@ -55,7 +55,8 @@ services:
         - "82:80"
         networks:
             bearchat:
-                ipv4_address:172.28.1.4
+                ipv4_address:
+                    172.28.1.4
         depends_on: 
         - db-server
 
