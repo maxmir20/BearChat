@@ -9,8 +9,8 @@ import (
 )
 
 func RegisterRoutes(router *mux.Router) error {
-	router.HandleFunc("/api/profile/{uuid}", getProfile).Methods(/*YOUR CODE HERE*/)
-	router.HandleFunc("/api/profile/{uuid}", updateProfile).Methods(/*YOUR CODE HERE*/)
+	router.HandleFunc("/api/profile/{uuid}", getProfile).Methods(http.MethodGet)
+	router.HandleFunc("/api/profile/{uuid}", updateProfile).Methods(http.MethodPut)
 
 	return nil
 }
@@ -36,51 +36,62 @@ func getProfile(w http.ResponseWriter, r *http.Request) {
 
 	// Obtain the uuid from the url path and store it in a `uuid` variable
 	// Hint: mux.Vars()
-	// YOUR CODE HERE
+	uuid := mux.Vars(r)["uuid"]
 
 
 	// Initialize a new Profile variable
-	//YOUR CODE HERE
-
+	prof := Profile{}
 
 	// Obtain all the information associated with the requested uuid
 	// Scan the information into the profile struct's variables
 	// Remember to pass in the address!
-	err := DB.QueryRow("YOUR CODE HERE", /* YOUR CODE HERE */).Scan(/* YOUR CODE HERE */, /* YOUR CODE HERE */, /* YOUR CODE HERE */, /* YOUR CODE HERE */)
+	err := DB.QueryRow("SELECT * FROM users WHERE uuid = ?", uuid).Scan(&prof.Firstname, &prof.Lastname, &prof.Email, &prof.UUID)
 	
 	/*  Check for errors with querying the database
 		Return an Internal Server Error if such an error occurs
 	*/
+	if err != nil{
+		http.Error(w, errors.New("error validating token: " + err.Error()).Error(), http.StatusInternalServerError)
+	}
 
   	//encode fetched data as json and serve to client
-	json.NewEncoder(w).Encode(profile)
+	json.NewEncoder(w).Encode(prof)
 	return
 }
 
 func updateProfile(w http.ResponseWriter, r *http.Request) {
 	
 	// Obtain the requested uuid from the url path and store it in a `uuid` variable
-	// YOUR CODE HERE
+	uuid := mux.Vars(r)["uuid"]
 
 	// Obtain the userID from the cookie
-	// YOUR CODE HERE
+	userID := getUUID(w, r)
 
 	// If the two ID's don't match, return a StatusUnauthorized
-	// YOUR CODE HERE
+	if userID != uuid {
+		http.Error(w, errors.New("uuid does not match").Error(), http.StatusUnauthorized)
+	}
 
 	// Decode the Request Body's JSON data into a profile variable
+	updated_profile := Profile{}
+	err := json.NewDecoder(r.Body).Decode(&updated_profile)
 
 	// Return an InternalServerError if there is an error decoding the request body
-	// YOUR CODE HERE
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 
 
 	// Insert the profile data into the users table
 	// Check db-server/initdb.sql for the scheme
 	// Make sure to use REPLACE INTO (as covered in the SQL homework)
-	err = DB.Exec("YOUR CODE HERE", /* YOUR CODE HERE */, /* YOUR CODE HERE */, /* YOUR CODE HERE */, /* YOUR CODE HERE */)
+	_, err = DB.Exec("REPLACE INTO users (firstName, lastName, email, uuid) VALUES(?,?,?,?)", updated_profile.Firstname, updated_profile.Lastname, updated_profile.Email, updated_profile.UUID)
 
+	
 	// Return an internal server error if any errors occur when querying the database.
-	// YOUR CODE HERE
+	if err != nil {
+		http.Error(w, errors.New("error retrieving").Error(), http.StatusInternalServerError)
+	}
 
 	return
 }
